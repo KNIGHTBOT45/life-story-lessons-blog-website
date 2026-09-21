@@ -1,69 +1,367 @@
-import Image from "next/image";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import Hero from "@/components/Hero";
+import ArticleCard from "@/components/ArticleCard";
+import CategoryCard from "@/components/CategoryCard";
+import Newsletter from "@/components/Newsletter";
+import { createClient } from "@/lib/supabase/server";
 
-export default function Home() {
+const categoryData = [
+  {
+    title: "Life Stories",
+    description:
+      "Experiences, memories and lessons from real life.",
+    image:
+      "https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=1000&q=80",
+    href: "/life-stories",
+  },
+  {
+    title: "Education",
+    description:
+      "Ideas about learning, knowledge and personal development.",
+    image:
+      "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=1000&q=80",
+    href: "/education",
+  },
+  {
+    title: "Motivation",
+    description:
+      "Thoughts that encourage action, courage and growth.",
+    image:
+      "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1000&q=80",
+    href: "/motivation",
+  },
+  {
+    title: "Mentoring",
+    description:
+      "Guidance, leadership and meaningful human connections.",
+    image:
+      "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1000&q=80",
+    href: "/mentoring",
+  },
+  {
+    title: "Technology",
+    description:
+      "Technology, AI, innovation and the digital future.",
+    image:
+      "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1000&q=80",
+    href: "/technology",
+  },
+];
+
+export default async function Home() {
+  const supabase = await createClient();
+
+  /*
+   * Get published posts from Supabase.
+   */
+  const { data: posts, error } = await supabase
+    .from("posts")
+    .select(`
+      id,
+      title,
+      slug,
+      excerpt,
+      featured_image,
+      published_at,
+      categories (
+        name
+      )
+    `)
+    .eq("status", "published")
+    .order("published_at", {
+      ascending: false,
+    })
+    .limit(12);
+
+  if (error) {
+    console.error("Error loading posts:", error);
+  }
+
+  /*
+   * Convert Supabase data into the format
+   * expected by ArticleCard.
+   */
+  const articles =
+    posts?.map((post: any) => ({
+      title: post.title,
+      excerpt: post.excerpt || "",
+      category: post.categories?.name || "Life Stories",
+      date: post.published_at
+        ? new Date(post.published_at).toLocaleDateString(
+            "en-US",
+            {
+              month: "long",
+              day: "numeric",
+              year: "numeric",
+            }
+          )
+        : "",
+      image:
+        post.featured_image ||
+        "https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1200&q=80",
+      slug: post.slug,
+    })) || [];
+
+  /*
+   * First 3 published articles become featured.
+   */
+  const featuredArticles = articles.slice(0, 3);
+
+  /*
+   * Next 6 published articles become latest.
+   */
+  const latestArticles = articles.slice(3, 9);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
+    <>
+      <Navbar />
+
+      <main>
+        <Hero />
+
+        {/* ================================
+            FEATURED ARTICLES
+        ================================= */}
+
+        <section className="section">
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">FEATURED</span>
+
+              <h2>Stories that stay with you.</h2>
+            </div>
+
             <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              href="/life-stories"
+              className="text-link"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
+              View all stories →
+            </a>
+          </div>
+
+          {featuredArticles.length > 0 ? (
+            <div className="featured-grid">
+              {featuredArticles.map((article) => (
+                <ArticleCard
+                  key={article.slug}
+                  {...article}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <h3>No articles yet.</h3>
+
+              <p>
+                Published articles will appear here.
+              </p>
+            </div>
+          )}
+        </section>
+
+        {/* ================================
+            CATEGORIES
+        ================================= */}
+
+        <section className="section section-muted">
+          <div className="section-heading centered">
+            <span className="eyebrow">EXPLORE</span>
+
+            <h2>Something for every journey.</h2>
+
+            <p>
+              Explore stories, knowledge and ideas
+              across the themes that shape our lives.
+            </p>
+          </div>
+
+          <div className="categories-grid">
+            {categoryData.map((category) => (
+              <CategoryCard
+                key={category.title}
+                {...category}
+              />
+            ))}
+          </div>
+        </section>
+
+        {/* ================================
+            LATEST ARTICLES
+        ================================= */}
+
+        <section className="section">
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">LATEST</span>
+
+              <h2>Fresh from the journal.</h2>
+            </div>
+
             <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              href="/life-stories"
+              className="text-link"
             >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
+              Browse articles →
+            </a>
+          </div>
+
+          {latestArticles.length > 0 ? (
+            <div className="articles-grid">
+              {latestArticles.map((article) => (
+                <ArticleCard
+                  key={article.slug}
+                  {...article}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <h3>More stories are coming.</h3>
+
+              <p>
+                New articles will appear here after
+                they are published.
+              </p>
+            </div>
+          )}
+        </section>
+
+        {/* ================================
+            PHILOSOPHY
+        ================================= */}
+
+        <section className="quote-section">
+          <div>
+            <span className="eyebrow">
+              A SIMPLE PHILOSOPHY
+            </span>
+
+            <blockquote>
+              “Every experience has something to teach
+              us, if we are willing to stop, reflect
+              and listen.”
+            </blockquote>
+
+            <p>— Life Story Lessons</p>
+          </div>
+        </section>
+
+        {/* ================================
+            VIDEOS
+        ================================= */}
+
+        <section className="section video-section">
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">WATCH</span>
+
+              <h2>Ideas in motion.</h2>
+            </div>
+
+            <a
+              href="/videos"
+              className="text-link"
+            >
+              View all videos →
+            </a>
+          </div>
+
+          <div className="video-grid">
+            <div className="video-card">
+              <div className="video-placeholder">
+                <span>▶</span>
+              </div>
+
+              <h3>Lessons from Experience</h3>
+
+              <p>
+                A short reflection on learning from
+                everyday life.
+              </p>
+            </div>
+
+            <div className="video-card">
+              <div className="video-placeholder">
+                <span>▶</span>
+              </div>
+
+              <h3>The Power of Mentoring</h3>
+
+              <p>
+                Why guidance and human connection
+                matter.
+              </p>
+            </div>
+
+            <div className="video-card">
+              <div className="video-placeholder">
+                <span>▶</span>
+              </div>
+
+              <h3>Technology and Tomorrow</h3>
+
+              <p>
+                Exploring how technology is changing
+                our lives.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* ================================
+            ABOUT
+        ================================= */}
+
+        <section className="about-preview">
+          <div className="about-image">
+            <img
+              src="/about-me.jpg"
+              alt="About the author"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+          </div>
+
+          <div className="about-content">
+            <span className="eyebrow">
+              ABOUT ME
+            </span>
+
+            <h2>
+              Stories become meaningful when they are
+              shared.
+            </h2>
+
+            <p>
+              Life Story Lessons is a personal platform
+              dedicated to sharing experiences,
+              educational insights, motivation,
+              mentoring ideas and thoughts about
+              technology.
+            </p>
+
+            <p>
+              The aim is simple: to create a place where
+              experiences become lessons and lessons
+              become opportunities for growth.
+            </p>
+
+            <a
+              href="/about"
+              className="button button-dark"
+            >
+              Read My Story
+            </a>
+          </div>
+        </section>
+
+        {/* ================================
+            NEWSLETTER
+        ================================= */}
+
+        <Newsletter />
       </main>
-    </div>
+
+      <Footer />
+    </>
   );
 }
