@@ -1,3 +1,4 @@
+```tsx
 "use client";
 
 import { useState } from "react";
@@ -31,6 +32,10 @@ export default function Navbar() {
               {link.name}
             </a>
           ))}
+
+          <a href="/login" className="login-link">
+            Login
+          </a>
         </nav>
 
         <button
@@ -53,8 +58,17 @@ export default function Navbar() {
               {link.name}
             </a>
           ))}
+
+          <a
+            href="/login"
+            className="login-link"
+            onClick={() => setMenuOpen(false)}
+          >
+            Login
+          </a>
         </div>
       )}
     </header>
   );
 }
+```
