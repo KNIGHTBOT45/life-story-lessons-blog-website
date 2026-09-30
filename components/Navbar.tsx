@@ -37,6 +37,12 @@ export default function Navbar() {
           </a>
         </nav>
 
+         <img
+    src="/logo.jpeg"
+    alt="Life Story Lessons"
+    className="site-logo"
+  />
+
         <button
           className="menu-button"
           onClick={() => setMenuOpen(!menuOpen)}
